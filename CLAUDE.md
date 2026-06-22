@@ -14,3 +14,6 @@ This project uses Tailwind **v4** — breaking changes from v3:
 ## Path Alias
 
 `@/*` resolves to the **project root** (`./*`), not `src/`.
+
+## skills
+Always use /frontend-design to create ui
