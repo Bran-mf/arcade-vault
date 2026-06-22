@@ -20,7 +20,7 @@ export default function Nav() {
   return (
     <>
       <nav className="av-nav">
-        <Link href="/biblioteca" className="logo" onClick={close}>
+        <Link href="/" className="logo" onClick={close}>
           <div className="logo-mark" />
           <div className="logo-text neon-cyan">
             ARCADE <span className="neon-magenta">VAULT</span>
