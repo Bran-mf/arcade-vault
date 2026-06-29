@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { GAMES } from "@/lib/data";
 import { GAME_COMPONENTS } from "@/lib/gameComponents";
 import type { GameProps } from "@/lib/gameComponents";
+import { insertScore } from "@/app/actions";
 
 export default function PlayerPage({
   params,
@@ -16,10 +17,15 @@ export default function PlayerPage({
   const router = useRouter();
 
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
+  const [lives, setLives] = useState(1);
   const [level, setLevel] = useState(1);
   const [paused, setPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
+  const [playerName, setPlayerName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [nameError, setNameError] = useState("");
+  const [gameKey, setGameKey] = useState(0);
 
   if (!game) {
     return (
@@ -31,11 +37,44 @@ export default function PlayerPage({
 
   const GameComponent = GAME_COMPONENTS[id] ?? null;
 
+  const handleGameOver = (finalScoreFromGame?: number) => {
+    setFinalScore(finalScoreFromGame ?? score);
+    setGameOver(true);
+  };
+
+  const handleRetry = () => {
+    setGameOver(false);
+    setFinalScore(0);
+    setScore(0);
+    setLives(3);
+    setLevel(1);
+    setPlayerName("");
+    setNameError("");
+    setGameKey((k) => k + 1);
+  };
+
+  const handleSubmit = async () => {
+    const name = playerName.trim().toUpperCase();
+    if (!name) {
+      setNameError("Ingresa un nombre.");
+      return;
+    }
+    setNameError("");
+    setSubmitting(true);
+    try {
+      await insertScore(id, name, finalScore);
+      router.push(`/detalle/${id}`);
+    } catch {
+      setNameError("Error al enviar. Intenta de nuevo.");
+      setSubmitting(false);
+    }
+  };
+
   const gameProps: GameProps = {
     onScore: setScore,
     onLives: setLives,
     onLevel: setLevel,
-    onGameOver: () => setGameOver(true),
+    onGameOver: handleGameOver,
     paused,
   };
 
@@ -83,7 +122,7 @@ export default function PlayerPage({
         <div className="crt-screen">
           <div className="game-arena">
             {GameComponent ? (
-              <GameComponent {...gameProps} />
+              <GameComponent key={gameKey} {...gameProps} />
             ) : (
               <>
                 <div className="grid-floor" />
@@ -94,6 +133,91 @@ export default function PlayerPage({
               </>
             )}
           </div>
+
+          {gameOver && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 16,
+                background: "rgba(0,0,0,0.85)",
+                zIndex: 10,
+                fontFamily: "var(--mono)",
+              }}
+            >
+              <div
+                className="flicker"
+                style={{
+                  fontSize: 28,
+                  color: "var(--neon-yellow)",
+                  letterSpacing: 4,
+                }}
+              >
+                GAME OVER
+              </div>
+              <div style={{ fontSize: 13, color: "var(--ink-dim)" }}>
+                PUNTUACIÓN FINAL
+              </div>
+              <div
+                style={{
+                  fontSize: 32,
+                  color: "var(--neon-cyan)",
+                  letterSpacing: 2,
+                }}
+              >
+                {finalScore.toLocaleString("es-ES")}
+              </div>
+              <div
+                style={{ fontSize: 11, color: "var(--ink-dim)", marginTop: 8 }}
+              >
+                INGRESA TU NOMBRE (máx. 12 caracteres)
+              </div>
+              <input
+                type="text"
+                maxLength={12}
+                value={playerName}
+                onChange={(e) => {
+                  setPlayerName(e.target.value.toUpperCase());
+                  setNameError("");
+                }}
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--neon-cyan)",
+                  color: "var(--neon-cyan)",
+                  fontFamily: "var(--mono)",
+                  fontSize: 18,
+                  padding: "6px 12px",
+                  textAlign: "center",
+                  letterSpacing: 4,
+                  outline: "none",
+                  width: 200,
+                }}
+                placeholder="JUGADOR"
+                autoFocus
+              />
+              {nameError && (
+                <div style={{ fontSize: 11, color: "var(--neon-magenta)" }}>
+                  {nameError}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                <button
+                  className="btn cyan"
+                  onClick={handleSubmit}
+                  disabled={submitting || !playerName.trim()}
+                >
+                  {submitting ? "ENVIANDO…" : "ENVIAR"}
+                </button>
+                <button className="btn ghost" onClick={handleRetry}>
+                  REINTENTAR
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         <div className="crt-bottom">
           <span className="led">
