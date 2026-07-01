@@ -14,4 +14,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType<GameProps>> = {
   rocas: dynamic(() => import("@/components/games/AsteroidsGame"), {
     ssr: false,
   }),
+  caida: dynamic(() => import("@/components/games/CaidaGame"), {
+    ssr: false,
+  }),
 };
